@@ -23,6 +23,9 @@ const Signup = () => {
       const data = await res.json();
       if (res.ok) {
         setMessage('✅ Signup successful! Redirecting to login...');
+        if (data.user) {
+          localStorage.setItem('userId', data.user.id);
+        }
         setTimeout(() => navigate('/login'), 1200);
       } else {
         setMessage(data.message || '❌ Signup failed');

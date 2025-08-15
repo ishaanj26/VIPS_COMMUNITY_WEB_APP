@@ -15,7 +15,7 @@ import ActivitySection from './UserSections/ActivitySection';
 import AchievementsSection from './UserSections/AchievementsSection';
 import CommunitySection from './UserSections/CommunitySection';
 import DashboardSection from './UserSections/DashboardSection';
-import SettingsSection from './UserSections/SettingsSection';
+import SettingsSection from './UserSections/SettingSection/SettingsSection';
 
 const sections = [
   { key: 'profile', label: 'Profile', icon: User },
@@ -28,11 +28,20 @@ const sections = [
 
 const UserPage = () => {
   const { user, setUser } = useContext(UserContext);
-  const [activeSection, setActiveSection] = useState('profile');
+  // Get ?section= from URL
+  const [activeSection, setActiveSection] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    // Only set if valid section
+    if (section && sections.some(s => s.key === section)) {
+      return section;
+    }
+    return 'profile';
+  });
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center mt-12">
+      <div className="flex flex-col items-center">
         <h2 className="text-2xl font-bold mb-4">Please log in to view your profile.</h2>
       </div>
     );
@@ -40,13 +49,12 @@ const UserPage = () => {
 
   const handleLogout = () => {
     setUser(null);
-    // Optionally clear token/localStorage here
-    localStorage.removeItem("authToken");
+    localStorage.removeItem("userId");
   };
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'profile': return <ProfileSection user={user} />;
+      case 'profile': return <ProfileSection user={user} setActiveSection={setActiveSection} />;
       case 'activity': return <ActivitySection />;
       case 'achievements': return <AchievementsSection />;
       case 'community': return <CommunitySection />;
@@ -60,7 +68,7 @@ const UserPage = () => {
     <div className="flex max-w-full mx-auto mt-0 min-h-screen bg-gray-50">
       
       {/* Sidebar */}
-      <aside className="w-56 bg-gray-900 text-white flex flex-col border-r border-gray-800 h-screen fixed mt-16">
+      <aside className="w-56 bg-gray-900 text-white flex flex-col border-r border-gray-800 h-screen fixed">
         {/* User Info */}
         <div className="flex flex-col items-center py-6 border-b border-gray-800">
           <span className="w-14 h-14 rounded-full bg-yellow-400 text-gray-900 flex items-center justify-center text-xl font-bold mb-2">
@@ -103,7 +111,7 @@ const UserPage = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 ml-56 mt-16">{renderSection()}</main>
+      <main className="flex-1 p-8 ml-56 ">{renderSection()}</main>
     </div>
   );
 };

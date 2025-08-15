@@ -27,9 +27,14 @@ const Login = () => {
       const data = await res.json();
       if (res.ok) {
         setMessage('✅ Login successful! Redirecting...');
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setUser(data.user);
-        setTimeout(() => navigate('/'), 1200);
+        localStorage.setItem('userId', data.user.id);
+        // Fetch user data after login
+        fetch(`${import.meta.env.VITE_SERVER_URL}/api/user/profile?userId=${data.user.id}`)
+          .then(res => res.json())
+          .then(profile => {
+            setUser({ id: data.user.id, ...profile });
+            setTimeout(() => navigate('/'), 1200);
+          });
       } else {
         setMessage(data.message || '❌ Login failed');
       }

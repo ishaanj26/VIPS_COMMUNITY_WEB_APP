@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { User, Folder, Calendar, Award, Activity } from "lucide-react";
 
@@ -9,7 +10,7 @@ const TABS = [
   { name: "Activity", icon: Activity },
 ];
 
-export default function ProfileSection() {
+export default function ProfileSection({user,setActiveSection}) {
   const [activeTab, setActiveTab] = useState("Overview");
 
   const renderContent = () => {
@@ -20,40 +21,58 @@ export default function ProfileSection() {
             {/* Bio */}
             <section>
               <h2 className="text-lg font-semibold mb-1">Bio</h2>
-              <p className="text-gray-600">
-                Passionate web developer & CSE student at VIPS. Loves building
-                community-driven platforms and exploring emerging tech.
-              </p>
+              {user.bio && user.bio.trim() ? (
+                <p className="text-gray-600">{user.bio}</p>
+              ) : (
+                <div className="text-gray-400 flex items-center gap-2">
+                  <span>No bio added yet.</span>
+                  <NavigateSettingsButton />
+                </div>
+              )}
             </section>
 
             {/* Skills */}
             <section>
               <h2 className="text-lg font-semibold mb-1">Skills</h2>
-              <div className="flex flex-wrap gap-2">
-                {["React", "Node.js", "MongoDB", "Tailwind CSS", "Flutter"].map((skill) => (
-                  <span
-                    key={skill}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+              {user.skills && user.skills.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {user.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-400 flex items-center gap-2">
+                  <span>No skills added yet.</span>
+                  <NavigateSettingsButton />
+                </div>
+              )}
             </section>
 
             {/* Interests */}
             <section>
               <h2 className="text-lg font-semibold mb-1">Interests</h2>
-              <div className="flex flex-wrap gap-2">
-                {["Hackathons", "Music", "UI Design", "AI", "Community Events"].map((interest) => (
-                  <span
-                    key={interest}
-                    className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full"
-                  >
-                    {interest}
-                  </span>
-                ))}
-              </div>
+              {user.interests && user.interests.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {user.interests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-400 flex items-center gap-2">
+                  <span>No interests added yet.</span>
+                  <NavigateSettingsButton />
+                </div>
+              )}
             </section>
 
             {/* Connections */}
@@ -63,6 +82,18 @@ export default function ProfileSection() {
             </section>
           </div>
         );
+// Button to navigate to settings page
+function NavigateSettingsButton() {
+  const navigate = useNavigate();
+  return (
+    <button
+      className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs"
+      onClick={() => setActiveSection("settings")}
+    >
+      Edit in Settings
+    </button>
+  );
+}
 
       case "Projects":
         return <EmptyState message="No projects yet" actionText="Add Project" />;
@@ -118,7 +149,7 @@ export default function ProfileSection() {
       {/* Name + Profile Completion */}
       <div className="pt-14 px-6 pb-4 border-b">
         <h1 className="text-xl font-bold">Ishaan Jain</h1>
-        <p className="text-gray-500">B.Tech CSE | Web Developer</p>
+       {user.courseTitle && user.title && <p className="text-gray-500">{user.courseTitle} | {user.title}</p>}
         <div className="mt-4">
           <div className="flex justify-between text-sm mb-1">
             <span className="text-gray-600">Profile Completion</span>

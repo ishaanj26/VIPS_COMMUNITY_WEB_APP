@@ -20,15 +20,22 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Try to load user from localStorage on app load
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) setUser(JSON.parse(storedUser));
+    // Load userId from localStorage and fetch user data
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+      fetch(`${import.meta.env.VITE_SERVER_URL}/api/user/profile?userId=${storedUserId}`)
+        .then(res => res.json())
+        .then(data => {
+          setUser({ id: storedUserId, ...data });
+        });
+    }
   }, []);
 
   return (
     <UserContext.Provider value={{ user, setUser }}>
       <Router>
         <Navbar />
+        <div className='mt-15'></div>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/events" element={<Events />} />

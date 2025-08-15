@@ -52,6 +52,7 @@ exports.verifyOtp = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log(email, password)
         if (!email  || !password) return res.status(400).json({ message: 'All fields required.' });
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: 'Email not found.' });

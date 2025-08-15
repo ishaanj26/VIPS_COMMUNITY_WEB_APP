@@ -1,10 +1,15 @@
-import React from "react";
-import Button from "../../../components/Button";
+import React, { useContext, useState } from "react";
+import Button from "../../../../components/Button";
 import {
   User, Image, Lock, Shield, Bell, Eye, Globe, Users, MessageCircle,
-  Trash2, LogOut, Download, Calendar, CreditCard, Moon, History, 
+  Trash2, LogOut, Download, Calendar, CreditCard, Moon, History,
   Bookmark, Settings
 } from "lucide-react";
+import { UserContext } from "../../../../App";
+import EditProfile from "./Modals/EditProfile";
+import ChangeProfilePicture from "./Modals/ChangeProfilePicture";
+import TwoFactorAuth from "./Modals/TwoFactorAuth";
+import ChangePassword from "./Modals/ChangePassword";
 
 const settingsData = [
   {
@@ -15,7 +20,7 @@ const settingsData = [
     ]
   },
   {
-    section: "Account & Security", 
+    section: "Account & Security",
     items: [
       { icon: Lock, title: "Change Password", description: "Update your password for security", action: "Update" },
       { icon: Shield, title: "Two-Factor Authentication", description: "Add an extra layer of security to your account", action: "Enable" },
@@ -70,6 +75,27 @@ const settingsData = [
 ];
 
 export default function SettingsSection() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTask, setModalTask] = useState("");
+  const { user, setUser } = useContext(UserContext);
+
+  // Open modal and use user data from context for Edit Profile
+  const handleAction = (action) => {
+    if (action === "Edit Profile") {
+      setModalTask("Edit Profile");
+      setModalOpen(true);
+    } else if (action === "Change Password") {
+      setModalTask("Change Password");
+      setModalOpen(true);
+    } else if (action === "Change Profile Picture") {
+      setModalTask("Change Profile Picture");
+      setModalOpen(true);
+    } else if (action === "Two-Factor Authentication") {
+      setModalTask("Two-Factor Authentication");
+      setModalOpen(true);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto bg-white shadow rounded-lg overflow-hidden">
@@ -95,7 +121,10 @@ export default function SettingsSection() {
                     <div className="font-semibold text-sm">{item.title}</div>
                     <div className="text-xs text-gray-500">{item.description}</div>
                   </div>
-                  <Button className="bg-slate-600 text-white px-3 py-1 rounded-md text-xs transition duration-300 hover:bg-slate-700 hover:scale-105">
+                  <Button
+                    className="bg-slate-600 text-white px-3 py-1 rounded-md text-xs transition duration-300 hover:bg-slate-700 hover:scale-105"
+                    onClick={() => handleAction(item.title)}
+                  >
                     {item.action}
                   </Button>
                 </div>
@@ -104,6 +133,23 @@ export default function SettingsSection() {
           ))}
         </div>
       </div>
+
+      {/* Modal for Edit Profile */}
+      {modalOpen && modalTask === "Edit Profile" && (
+        <EditProfile setModalOpen={setModalOpen} user={user} setUser={setUser} />
+      )}
+      {/* Modal for Change Password */}
+      {modalOpen && modalTask === "Change Password" && (
+        <ChangePassword setModalOpen={setModalOpen} user={user} />
+      )}
+      {/* Modal for Change Profile Picture */}
+      {modalOpen && modalTask === "Change Profile Picture" && (
+        <ChangeProfilePicture setModalOpen={setModalOpen} user={user} />
+      )}
+      {/* Modal for Two-Factor Authentication */}
+      {modalOpen && modalTask === "Two-Factor Authentication" && (
+        <TwoFactorAuth setModalOpen={setModalOpen} user={user} />
+      )}
     </div>
   );
 }
