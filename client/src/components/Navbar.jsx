@@ -26,10 +26,10 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <ul className="hidden md:flex gap-8 items-center">
           <li><Link to="/" className="text-white font-medium hover:text-yellow-400 transition-colors">Home</Link></li>
-          <li><Link to="/events" className="text-white font-medium hover:text-yellow-400 transition-colors">Events</Link></li>
-          <li><Link to="/members" className="text-white font-medium hover:text-yellow-400 transition-colors">Members</Link></li>
-          <li><Link to="/about" className="text-white font-medium hover:text-yellow-400 transition-colors">About</Link></li>
-          <li><Link to="/contact" className="text-white font-medium hover:text-yellow-400 transition-colors">Contact</Link></li>
+          <li><Link to="/feed" className="text-white font-medium hover:text-yellow-400 transition-colors">Feed</Link></li>
+          <li><Link to="/forum" className="text-white font-medium hover:text-yellow-400 transition-colors">Forum</Link></li>
+          <li><Link to="/communities" className="text-white font-medium hover:text-yellow-400 transition-colors">Communities</Link></li>
+          <li><Link to="/marketplace" className="text-white font-medium hover:text-yellow-400 transition-colors">Market Place</Link></li>
         </ul>
 
         {/* Desktop User Section */}
@@ -83,10 +83,10 @@ const Navbar = () => {
           {/* Menu Links */}
           <ul className="flex flex-col gap-4 mt-4">
             <li><Link to="/" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Home</Link></li>
-            <li><Link to="/events" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Events</Link></li>
-            <li><Link to="/members" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Members</Link></li>
-            <li><Link to="/about" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>About</Link></li>
-            <li><Link to="/contact" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Contact</Link></li>
+            <li><Link to="/feed" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Feed</Link></li>
+            <li><Link to="/forum" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Forum</Link></li>
+            <li><Link to="/communities" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Communities</Link></li>
+            <li><Link to="/marketplace" className="text-white font-medium hover:text-yellow-400" onClick={closeMenu}>Buy/Sell</Link></li>
           </ul>
 
           {/* User Section */}
