@@ -367,6 +367,34 @@ const ItemDetails = () => {
     navigate(`/messages?to=${item.sellerId._id}&item=${id}`);
   };
 
+  const handleShareItem = async () => {
+    const shareData = {
+      title: item.title,
+      text: `Check out this item: ${item.title} - ₹${item.price}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to copying URL to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Another fallback - try to copy to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+      } catch (clipboardError) {
+        // Final fallback - show the URL
+        prompt('Copy this link to share:', window.location.href);
+      }
+    }
+  };
+
   const handleLikeItem = async () => {
     if (!user) {
       navigate('/login');
@@ -426,6 +454,37 @@ const ItemDetails = () => {
     } catch (error) {
       console.error('Error marking item as sold:', error);
       alert('Failed to mark item as sold');
+    }
+  };
+
+  const unmarkAsSold = async () => {
+    if (!confirm('Are you sure you want to mark this item as available again?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/api/marketplace/item/${id}/unmark-sold`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sellerId: user._id })
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setItem({ ...item, isSold: false });
+        alert('Item marked as available successfully!');
+      } else {
+        alert(data.message || 'Failed to mark item as available');
+      }
+    } catch (error) {
+      console.error('Error marking item as available:', error);
+      alert('Failed to mark item as available');
     }
   };
 
@@ -531,7 +590,10 @@ const ItemDetails = () => {
               >
                 <Heart size={20} className={item.isLiked ? 'fill-current' : ''} />
               </button>
-              <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors">
+              <button 
+                onClick={handleShareItem}
+                className="bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"
+              >
                 <Share2 size={20} className="text-gray-700" />
               </button>
             </div>
@@ -735,12 +797,19 @@ const ItemDetails = () => {
 
             {isOwner && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {!item.isSold && (
+                {!item.isSold ? (
                   <button
                     onClick={markAsSold}
                     className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
                     Mark as Sold
+                  </button>
+                ) : (
+                  <button
+                    onClick={unmarkAsSold}
+                    className="px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Mark as Available
                   </button>
                 )}
                 <button
@@ -965,7 +1034,7 @@ const ItemDetails = () => {
       {/* Offer Modal */}
       {showOfferModal && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[9999]"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
           onClick={() => setShowOfferModal(false)}
         >
           <div 

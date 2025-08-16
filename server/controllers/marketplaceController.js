@@ -66,6 +66,78 @@ const addItem = async (req, res) => {
   }
 };
 
+// Update item (enhanced)
+const updateItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      description,
+      price,
+      category,
+      tags,
+      location,
+      images,
+      videos,
+      condition,
+      negotiable,
+      urgentSale
+    } = req.body;
+    const sellerId = req.body.sellerId || req.user?.id;
+
+    if (!sellerId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const item = await MarketplaceItem.findById(id);
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: 'Item not found'
+      });
+    }
+
+    // Check if user is the seller
+    if (item.sellerId.toString() !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the seller can update this item'
+      });
+    }
+
+    const updatedItem = await MarketplaceItem.findByIdAndUpdate(
+      id,
+      {
+        title,
+        description,
+        price: parseFloat(price),
+        category,
+        tags: tags ? tags.map(tag => tag.toLowerCase().trim()) : [],
+        location: location || {},
+        images: images || [],
+        videos: videos || [],
+        condition: condition || 'good',
+        negotiable: negotiable !== undefined ? negotiable : true,
+        urgentSale: urgentSale || false
+      },
+      { new: true, runValidators: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Item updated successfully',
+      item: updatedItem
+    });
+  } catch (error) {
+    console.error('Update item error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to update item'
+    });
+  }
+};
+
 // Get all items with advanced filtering and searching
 const getItems = async (req, res) => {
   try {
@@ -342,6 +414,53 @@ const markItemSold = async (req, res) => {
   }
 };
 
+// Unmark item as sold (mark as available)
+const unmarkItemSold = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sellerId = req.body.sellerId || req.user?.id;
+
+    const item = await MarketplaceItem.findById(id);
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: 'Item not found'
+      });
+    }
+
+    // Check if user is the seller
+    if (item.sellerId.toString() !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the seller can unmark item as sold'
+      });
+    }
+
+    const updatedItem = await MarketplaceItem.findByIdAndUpdate(
+      id,
+      {
+        isSold: false,
+        soldAt: null,
+        soldTo: null
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Item marked as available',
+      item: updatedItem
+    });
+  } catch (error) {
+    console.error('Unmark item sold error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unmark item as sold'
+    });
+  }
+};
+
 // Increment item views
 const incrementItemView = async (req, res) => {
   try {
@@ -454,6 +573,53 @@ const getUserItems = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch user items'
+    });
+  }
+};
+
+// Get user statistics 
+const getUserStats = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    // Get user's items
+    const userItems = await MarketplaceItem.find({ sellerId: userId });
+    
+    // Calculate stats
+    const totalItems = userItems.length;
+    const activeItems = userItems.filter(item => !item.isSold).length;
+    const soldItems = userItems.filter(item => item.isSold).length;
+    const totalViews = userItems.reduce((sum, item) => sum + (item.views || 0), 0);
+    
+    // Calculate total earnings (sum of prices of sold items)
+    const totalEarnings = userItems
+      .filter(item => item.isSold)
+      .reduce((sum, item) => sum + item.price, 0);
+
+    const stats = {
+      totalItems,
+      activeItems,
+      soldItems,
+      totalViews,
+      totalEarnings
+    };
+
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    console.error('Get user stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user statistics'
     });
   }
 };
@@ -969,8 +1135,10 @@ module.exports = {
   getItemById,
   incrementItemView,
   markItemSold,
+  updateItem,
   deleteItem,
   getUserItems,
+  getUserStats,
   getCategories,
   createOffer,
   getItemOffers,
@@ -981,5 +1149,6 @@ module.exports = {
   toggleCommentLike,
   deleteComment,
   getTrendingTags,
-  getMarketplaceStats
+  getMarketplaceStats,
+  unmarkItemSold
 };

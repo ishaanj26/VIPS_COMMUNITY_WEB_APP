@@ -38,7 +38,8 @@ const UserItems = () => {
 
   // Redirect if not logged in
   React.useEffect(() => {
-    if (!user) {
+    const token = localStorage.getItem('token');
+    if (!user && !token) {
       navigate('/login');
     }
   }, [user, navigate]);

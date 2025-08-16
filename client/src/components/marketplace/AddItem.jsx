@@ -1,12 +1,14 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../../App';
 import { Upload, X, Plus, AlertCircle, MapPin, Tag, Video } from 'lucide-react';
 
 const AddItem = () => {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
+  const { id } = useParams(); // Get item ID for edit mode
   const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     title: '',
@@ -37,6 +39,61 @@ const AddItem = () => {
     { value: 'vehicles', label: 'Vehicles' },
     { value: 'other', label: 'Other' }
   ];
+
+  // Check if we're in edit mode and fetch item data
+  useEffect(() => {
+    if (id) {
+      setIsEditMode(true);
+      fetchItemData();
+    }
+  }, [id]);
+
+  const fetchItemData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/marketplace/item/${id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        const item = data.item;
+        
+        // Check if current user is the owner
+        if (item.sellerId._id !== user._id) {
+          alert('You can only edit your own items');
+          navigate('/marketplace/my-items');
+          return;
+        }
+
+        setFormData({
+          title: item.title || '',
+          description: item.description || '',
+          price: item.price?.toString() || '',
+          category: item.category || '',
+          tags: item.tags || [],
+          location: item.location || {
+            campus: 'Main Campus',
+            hostel: '',
+            block: '',
+            room: ''
+          },
+          images: item.images || [],
+          videos: item.videos || [],
+          condition: item.condition || 'good',
+          negotiable: item.negotiable !== undefined ? item.negotiable : true,
+          urgentSale: item.urgentSale || false
+        });
+      } else {
+        alert('Item not found');
+        navigate('/marketplace/my-items');
+      }
+    } catch (error) {
+      console.error('Error fetching item:', error);
+      alert('Failed to load item data');
+      navigate('/marketplace/my-items');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const conditions = [
     { value: 'new', label: 'Brand New' },
@@ -104,7 +161,10 @@ const AddItem = () => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    
+    processImageFiles(files);
+  };
+
+  const processImageFiles = (files) => {
     // For now, we'll use placeholder URLs
     // In production, implement proper image upload to Cloudinary/AWS S3
     const imageUrls = files.map((file, index) => ({
@@ -117,6 +177,33 @@ const AddItem = () => {
       ...prev,
       images: [...prev.images, ...imageUrls].slice(0, 8) // Max 8 images
     }));
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length > 0) {
+      processImageFiles(imageFiles);
+    }
   };
 
   const handleVideoUpload = (e) => {
@@ -198,14 +285,20 @@ const AddItem = () => {
     setLoading(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/marketplace/add-item`, {
-        method: 'POST',
+      const url = isEditMode 
+        ? `${import.meta.env.VITE_SERVER_URL}/api/marketplace/item/${id}`
+        : `${import.meta.env.VITE_SERVER_URL}/api/marketplace/add-item`;
+      
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
-          sellerId: user.id,
+          sellerId: user._id,
           price: parseFloat(formData.price)
         })
       });
@@ -213,12 +306,15 @@ const AddItem = () => {
       const data = await response.json();
 
       if (data.success) {
-        navigate(`/marketplace/item/${data.item._id}`);
+        const itemId = isEditMode ? id : data.item._id;
+        navigate(`/marketplace/item/${itemId}`, { replace: true });
+        // Scroll to top of the page
+        window.scrollTo(0, 0);
       } else {
-        setErrors({ submit: data.message || 'Failed to add item' });
+        setErrors({ submit: data.message || `Failed to ${isEditMode ? 'update' : 'add'} item` });
       }
     } catch (error) {
-      console.error('Error adding item:', error);
+      console.error(`Error ${isEditMode ? 'updating' : 'adding'} item:`, error);
       setErrors({ submit: 'Network error. Please try again.' });
     } finally {
       setLoading(false);
@@ -232,7 +328,9 @@ const AddItem = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">List Your Item</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          {isEditMode ? 'Edit Your Item' : 'List Your Item'}
+        </h1>
 
         {errors.submit && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
@@ -548,7 +646,13 @@ const AddItem = () => {
               )}
 
               {formData.images.length < 8 && (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <input
                     type="file"
                     multiple
@@ -633,7 +737,7 @@ const AddItem = () => {
               disabled={loading}
               className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Adding Item...' : 'List Item'}
+              {loading ? (isEditMode ? 'Updating Item...' : 'Adding Item...') : (isEditMode ? 'Update Item' : 'List Item')}
             </button>
           </div>
         </form>

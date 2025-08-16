@@ -2,12 +2,15 @@ const express = require('express');
 const router = express.Router();
 const {
   addItem,
+  updateItem,
   getItems,
   getItemById,
   incrementItemView,
   markItemSold,
+  unmarkItemSold,
   deleteItem,
   getUserItems,
+  getUserStats,
   getCategories,
   createOffer,
   getItemOffers,
@@ -38,9 +41,12 @@ router.get('/stats', getMarketplaceStats);
 
 // ITEM MANAGEMENT ROUTES (require authentication)
 router.post('/add-item', authenticateUser, addItem);
+router.put('/item/:id', authenticateUser, updateItem);
 router.put('/item/:id/mark-sold', authenticateUser, markItemSold);
+router.put('/item/:id/unmark-sold', authenticateUser, unmarkItemSold);
 router.delete('/item/:id', authenticateUser, deleteItem);
 router.get('/user/:userId/items', authenticateUser, getUserItems);
+router.get('/user/:userId/stats', authenticateUser, getUserStats);
 
 // OFFER MANAGEMENT ROUTES
 router.post('/offers', authenticateUser, createOffer);
