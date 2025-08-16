@@ -18,8 +18,10 @@ connectDB();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const marketplaceRoutes = require('./routes/marketplace');
+const messageRoutes = require('./routes/messages');
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`));

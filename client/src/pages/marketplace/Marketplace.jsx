@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../../App';
-import MarketplaceHome from '../../components/marketplace/MarketplaceHome';
+import EnhancedMarketplaceHome from '../../components/marketplace/EnhancedMarketplaceHome';
 import AddItem from '../../components/marketplace/AddItem';
-import ItemDetails from '../../components/marketplace/ItemDetails';
+import EnhancedItemDetails from '../../components/marketplace/EnhancedItemDetails';
 import UserItems from '../../components/marketplace/UserItems';
-import { Plus, Package, TrendingUp, Users } from 'lucide-react';
+import Messages from '../../components/marketplace/Messages';
+import { Plus, Package, TrendingUp, Users, MessageCircle } from 'lucide-react';
 
 const Marketplace = () => {
   const { user } = useContext(UserContext);
@@ -108,6 +109,13 @@ const Marketplace = () => {
                 >
                   My Items
                 </Link>
+                <Link
+                  to="/marketplace/messages"
+                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-colors backdrop-blur-sm"
+                >
+                  <MessageCircle size={20} />
+                  Messages
+                </Link>
               </>
             ) : (
               <Link
@@ -123,10 +131,12 @@ const Marketplace = () => {
 
       {/* Routes */}
       <Routes>
-        <Route path="/" element={<MarketplaceHome />} />
+        <Route path="/" element={<EnhancedMarketplaceHome />} />
         <Route path="/add-item" element={<AddItem />} />
-        <Route path="/item/:id" element={<ItemDetails />} />
+        <Route path="/item/:id" element={<EnhancedItemDetails />} />
+        <Route path="/edit-item/:id" element={<AddItem />} />
         <Route path="/my-items" element={<UserItems />} />
+        <Route path="/messages" element={<Messages />} />
       </Routes>
     </div>
   );

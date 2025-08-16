@@ -9,6 +9,7 @@ import Feed from './pages/feed/Feed';
 import Forum from './pages/forum/Forum';
 import Communities from './pages/communitites/Communities';
 import Marketplace from './pages/marketplace/Marketplace';
+import Messages from './components/marketplace/Messages';
 import Navbar from './components/Navbar';
 import UserPage from './pages/userpage/UserPage';
 import MemberProfile from './pages/footer-links/MemberProfile';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/forum" element={<Forum />} />
           <Route path="/communities" element={<Communities />} />
           <Route path="/marketplace/*" element={<Marketplace />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/events" element={<Events />} />
           <Route path="/members" element={<Members />} />
           <Route path="/members/:memberId" element={<MemberProfile />} />
