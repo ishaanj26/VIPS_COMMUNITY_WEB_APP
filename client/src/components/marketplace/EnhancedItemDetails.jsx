@@ -1032,13 +1032,14 @@ const ItemDetails = () => {
       </div>
 
       {/* Offer Modal */}
+
       {showOfferModal && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
+          className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ backdropFilter: 'blur(8px)', background: 'rgba(30,30,30,0.25)' }}
           onClick={() => setShowOfferModal(false)}
         >
           <div 
-            className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-200 relative"
+            className="bg-white bg-opacity-80 rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-200 relative"
             onClick={e => e.stopPropagation()}
           >
             {/* Close button */}

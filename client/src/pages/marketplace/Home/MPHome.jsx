@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { UserContext } from '../../App';
-import EnhancedSearchBar from './EnhancedSearchBar';
-import EnhancedItemCard from './EnhancedItemCard';
-import Pagination from './Pagination';
+import { UserContext } from '../../../App';
+import EnhancedSearchBar from '../../../components/marketplace/EnhancedSearchBar';
+import EnhancedItemCard from '../../../components/marketplace/EnhancedItemCard';
+import Pagination from '../../../components/marketplace/Pagination';
 import { 
   Plus, 
   BarChart3, 
   TrendingUp, 
   Users, 
   Package,
-  Filter,
   Grid3X3,
   List,
-  Star
 } from 'lucide-react';
+import QuickActions from './QuickActions';
+import NoItemsFound from './NoItemsFound';
 
-const EnhancedMarketplaceHome = () => {
+const EnhancedMarketplaceHome = ({stats,setStats}) => {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,8 +25,7 @@ const EnhancedMarketplaceHome = () => {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
   const [viewMode, setViewMode] = useState('grid'); // grid or list
-  const [stats, setStats] = useState({});
-  const [categories, setCategories] = useState([]);
+  // const [categories, setCategories] = useState([]);
   const [currentFilters, setCurrentFilters] = useState({});
 
   // Initialize filters from URL params
@@ -39,8 +38,6 @@ const EnhancedMarketplaceHome = () => {
     };
     setCurrentFilters(initialFilters);
     fetchItems(initialFilters);
-    fetchStats();
-    fetchCategories();
   }, [searchParams]);
 
   const fetchItems = async (filters = currentFilters) => {
@@ -80,30 +77,6 @@ const EnhancedMarketplaceHome = () => {
       console.error('Error fetching items:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/marketplace/stats`);
-      const data = await response.json();
-      if (data.success) {
-        setStats(data.stats);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/marketplace/categories`);
-      const data = await response.json();
-      if (data.success) {
-        setCategories(data.categories);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
     }
   };
 
@@ -159,7 +132,7 @@ const EnhancedMarketplaceHome = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('userId')}`,
         },
         body: JSON.stringify({ 
           itemId: itemId,
@@ -288,7 +261,7 @@ const EnhancedMarketplaceHome = () => {
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {stats.categoriesBreakdown?.length || 0}
+                  {stats.categoriesBreakdown && stats.categoriesBreakdown?.length || 0}
                 </div>
                 <div className="text-sm text-gray-600">Categories</div>
               </div>
@@ -298,7 +271,7 @@ const EnhancedMarketplaceHome = () => {
       )}
 
       {/* Categories Quick Filter */}
-      {categories.length > 0 && (
+      {stats.categoriesBreakdown && stats.categoriesBreakdown.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
           <h3 className="font-semibold text-gray-900 mb-3">Browse by Category</h3>
           <div className="flex flex-wrap gap-2">
@@ -312,7 +285,7 @@ const EnhancedMarketplaceHome = () => {
             >
               All ({stats.activeListings || 0})
             </button>
-            {categories.map((category) => (
+            {stats.categoriesBreakdown.map((category) => (
               <button
                 key={category._id}
                 onClick={() => handleCategoryClick(category)}
@@ -392,42 +365,11 @@ const EnhancedMarketplaceHome = () => {
           )}
         </>
       ) : (
-        <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Package className="text-gray-400" size={48} />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No items found</h3>
-          <p className="text-gray-600 mb-6">
-            Try adjusting your search criteria or browse different categories
-          </p>
-          <button
-            onClick={() => navigate('/marketplace/add-item')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            List the First Item
-          </button>
-        </div>
+        <NoItemsFound navigate={navigate} />
       )}
 
       {/* Quick Actions Sidebar */}
-      {user && (
-        <div className="fixed bottom-6 right-6 space-y-3">
-          <button
-            onClick={() => navigate('/marketplace/my-items')}
-            className="w-12 h-12 bg-gray-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors"
-            title="My Items"
-          >
-            <Package size={20} />
-          </button>
-          <button
-            onClick={() => navigate('/marketplace/add-item')}
-            className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors"
-            title="Sell Item"
-          >
-            <Plus size={20} />
-          </button>
-        </div>
-      )}
+    {user && <QuickActions navigate={navigate} />}
     </div>
   );
 };

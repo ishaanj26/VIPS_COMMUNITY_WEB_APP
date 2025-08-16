@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../../App';
 import { Upload, X, Plus, AlertCircle, MapPin, Tag, Video } from 'lucide-react';
 
-const AddItem = () => {
+const AddItem = ({fetchMarketplaceStats}) => {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const { id } = useParams(); // Get item ID for edit mode
@@ -304,7 +304,7 @@ const AddItem = () => {
       });
 
       const data = await response.json();
-
+fetchMarketplaceStats()
       if (data.success) {
         const itemId = isEditMode ? id : data.item._id;
         navigate(`/marketplace/item/${itemId}`, { replace: true });

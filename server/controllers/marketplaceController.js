@@ -51,7 +51,7 @@ const addItem = async (req, res) => {
     });
 
     const savedItem = await newItem.save();
-    
+
     res.status(201).json({
       success: true,
       message: 'Item added successfully',
@@ -159,6 +159,7 @@ const getItems = async (req, res) => {
       isSold = 'false'
     } = req.query;
 
+
     // Build filter object
     const filter = { isSold: isSold === 'true' };
 
@@ -176,13 +177,14 @@ const getItems = async (req, res) => {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+        { tags: { $elemMatch: { $regex: search, $options: 'i' } } }
       ];
     }
-
     if (tags) {
       const tagArray = Array.isArray(tags) ? tags : tags.split(',');
-      filter.tags = { $in: tagArray.map(tag => tag.toLowerCase().trim()) };
+      filter.tags = {
+        $in: tagArray.map(tag => new RegExp(`^${tag.trim()}$`, 'i'))
+      };
     }
 
     if (location) {
@@ -237,7 +239,7 @@ const getItems = async (req, res) => {
       const user = await User.findById(req.query.userId);
       if (user) {
         items.forEach(item => {
-          item.isLiked = user.likedItems.some(like => 
+          item.isLiked = user.likedItems.some(like =>
             like.itemId.toString() === item._id.toString()
           );
         });
@@ -290,7 +292,7 @@ const getItemById = async (req, res) => {
       const User = require('../models/User');
       const user = await User.findById(userId);
       if (user) {
-        item.isLiked = user.likedItems.some(like => 
+        item.isLiked = user.likedItems.some(like =>
           like.itemId.toString() === item._id.toString()
         );
       }
@@ -314,9 +316,9 @@ const getItemById = async (req, res) => {
       _id: { $ne: id },
       isSold: false
     })
-    .limit(4)
-    .select('title price images createdAt')
-    .lean();
+      .limit(4)
+      .select('title price images createdAt')
+      .lean();
 
     // Get recent comments/questions with nested structure
     const comments = await Comment.find({
@@ -324,11 +326,11 @@ const getItemById = async (req, res) => {
       isDeleted: false,
       parentCommentId: null // Only get main comments (not replies)
     })
-    .populate('userId', 'name profilePicture')
-    .populate('answeredBy', 'name profilePicture')
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .lean();
+      .populate('userId', 'name profilePicture')
+      .populate('answeredBy', 'name profilePicture')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
 
     // Get replies for each comment
     for (let comment of comments) {
@@ -336,10 +338,10 @@ const getItemById = async (req, res) => {
         parentCommentId: comment._id,
         isDeleted: false
       })
-      .populate('userId', 'name profilePicture verified')
-      .sort({ createdAt: 1 })
-      .lean();
-      
+        .populate('userId', 'name profilePicture verified')
+        .sort({ createdAt: 1 })
+        .lean();
+
       comment.replies = replies;
     }
 
@@ -591,13 +593,13 @@ const getUserStats = async (req, res) => {
 
     // Get user's items
     const userItems = await MarketplaceItem.find({ sellerId: userId });
-    
+
     // Calculate stats
     const totalItems = userItems.length;
     const activeItems = userItems.filter(item => !item.isSold).length;
     const soldItems = userItems.filter(item => item.isSold).length;
     const totalViews = userItems.reduce((sum, item) => sum + (item.views || 0), 0);
-    
+
     // Calculate total earnings (sum of prices of sold items)
     const totalEarnings = userItems
       .filter(item => item.isSold)
@@ -624,27 +626,7 @@ const getUserStats = async (req, res) => {
   }
 };
 
-// Get categories with item counts
-const getCategories = async (req, res) => {
-  try {
-    const categories = await MarketplaceItem.aggregate([
-      { $match: { isSold: false } },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
 
-    res.json({
-      success: true,
-      categories
-    });
-  } catch (error) {
-    console.error('Get categories error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch categories'
-    });
-  }
-};
 
 // OFFER MANAGEMENT
 
@@ -932,7 +914,7 @@ const getItemComments = async (req, res) => {
     const { page = 1, limit = 20, type = 'all' } = req.query;
 
     const filter = { itemId, isDeleted: false, parentCommentId: null }; // Only get main comments
-    
+
     if (type === 'questions') {
       filter.isQuestion = true;
     } else if (type === 'comments') {
@@ -953,9 +935,9 @@ const getItemComments = async (req, res) => {
         parentCommentId: comment._id,
         isDeleted: false
       })
-      .populate('userId', 'name profilePicture verified')
-      .sort({ createdAt: 1 });
-      
+        .populate('userId', 'name profilePicture verified')
+        .sort({ createdAt: 1 });
+
       comment.replies = replies;
     }
 
@@ -997,7 +979,7 @@ const toggleCommentLike = async (req, res) => {
       });
     }
 
-    const existingLike = comment.likes.find(like => 
+    const existingLike = comment.likes.find(like =>
       like.userId.toString() === userId
     );
 
@@ -1051,6 +1033,28 @@ const getTrendingTags = async (req, res) => {
   }
 };
 
+// Get categories with item counts
+const getCategories = async (req, res) => {
+  try {
+    const categories = await MarketplaceItem.aggregate([
+      { $match: { isSold: false } },
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.json({
+      success: true,
+      categories
+    });
+  } catch (error) {
+    console.error('Get categories error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch categories'
+    });
+  }
+};
+
 // Get marketplace statistics
 const getMarketplaceStats = async (req, res) => {
   try {
@@ -1089,9 +1093,9 @@ const deleteComment = async (req, res) => {
     const userId = req.user?.id || req.body.userId;
 
     if (!userId) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Authentication required' 
+        message: 'Authentication required'
       });
     }
 
@@ -1105,7 +1109,7 @@ const deleteComment = async (req, res) => {
 
     // Get the item to check if user is the seller
     const item = await MarketplaceItem.findById(comment.itemId);
-    
+
     // Check if user can delete the comment (either the comment author or item seller)
     if (comment.userId.toString() !== userId.toString() && item.sellerId.toString() !== userId.toString()) {
       return res.status(403).json({
