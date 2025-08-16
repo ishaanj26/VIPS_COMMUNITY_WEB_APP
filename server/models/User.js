@@ -29,7 +29,28 @@ const userSchema = new mongoose.Schema({
         github: { type: String, default: '' },
         linkedin: { type: String, default: '' },
         twitter: { type: String, default: '' }
-    }
+    },
+    // Marketplace related fields
+    likedItems: [{
+        itemId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'MarketplaceItem'
+        },
+        likedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    likedComments: [{
+        commentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Comment'
+        },
+        likedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 });
 
 module.exports = mongoose.model('User', userSchema);

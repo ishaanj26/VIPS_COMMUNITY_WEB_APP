@@ -159,6 +159,19 @@ const getItems = async (req, res) => {
       .populate('sellerId', 'name email profilePicture verified')
       .lean();
 
+    // If userId is provided, check if user has liked each item
+    if (req.query.userId) {
+      const User = require('../models/User');
+      const user = await User.findById(req.query.userId);
+      if (user) {
+        items.forEach(item => {
+          item.isLiked = user.likedItems.some(like => 
+            like.itemId.toString() === item._id.toString()
+          );
+        });
+      }
+    }
+
     // Get total count for pagination
     const total = await MarketplaceItem.countDocuments(filter);
 
@@ -200,6 +213,17 @@ const getItemById = async (req, res) => {
       });
     }
 
+    // Check if user has liked this item
+    if (userId) {
+      const User = require('../models/User');
+      const user = await User.findById(userId);
+      if (user) {
+        item.isLiked = user.likedItems.some(like => 
+          like.itemId.toString() === item._id.toString()
+        );
+      }
+    }
+
     // Add view if user is not the seller
     if (userId && userId !== item.sellerId._id.toString()) {
       await MarketplaceItem.findById(id).then(itemDoc => {
@@ -222,16 +246,30 @@ const getItemById = async (req, res) => {
     .select('title price images createdAt')
     .lean();
 
-    // Get recent comments/questions
+    // Get recent comments/questions with nested structure
     const comments = await Comment.find({
       itemId: id,
-      isDeleted: false
+      isDeleted: false,
+      parentCommentId: null // Only get main comments (not replies)
     })
     .populate('userId', 'name profilePicture')
     .populate('answeredBy', 'name profilePicture')
     .sort({ createdAt: -1 })
     .limit(10)
     .lean();
+
+    // Get replies for each comment
+    for (let comment of comments) {
+      const replies = await Comment.find({
+        parentCommentId: comment._id,
+        isDeleted: false
+      })
+      .populate('userId', 'name profilePicture verified')
+      .sort({ createdAt: 1 })
+      .lean();
+      
+      comment.replies = replies;
+    }
 
     res.json({
       success: true,
@@ -300,6 +338,26 @@ const markItemSold = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to mark item as sold'
+    });
+  }
+};
+
+// Increment item views
+const incrementItemView = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await MarketplaceItem.findByIdAndUpdate(id, { $inc: { views: 1 } });
+
+    res.json({
+      success: true,
+      message: 'View incremented'
+    });
+  } catch (error) {
+    console.error('Increment view error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to increment view'
     });
   }
 };
@@ -707,14 +765,12 @@ const getItemComments = async (req, res) => {
     const { itemId } = req.params;
     const { page = 1, limit = 20, type = 'all' } = req.query;
 
-    const filter = { itemId, isDeleted: false };
+    const filter = { itemId, isDeleted: false, parentCommentId: null }; // Only get main comments
     
     if (type === 'questions') {
       filter.isQuestion = true;
-      filter.parentCommentId = null;
     } else if (type === 'comments') {
       filter.isQuestion = false;
-      filter.parentCommentId = null;
     }
 
     const skip = (page - 1) * limit;
@@ -860,10 +916,58 @@ const getMarketplaceStats = async (req, res) => {
   }
 };
 
+// Delete comment
+const deleteComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user?.id || req.body.userId;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required' 
+      });
+    }
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found'
+      });
+    }
+
+    // Get the item to check if user is the seller
+    const item = await MarketplaceItem.findById(comment.itemId);
+    
+    // Check if user can delete the comment (either the comment author or item seller)
+    if (comment.userId.toString() !== userId.toString() && item.sellerId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own comments or comments on your items'
+      });
+    }
+
+    await Comment.findByIdAndDelete(commentId);
+
+    res.json({
+      success: true,
+      message: 'Comment deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting comment'
+    });
+  }
+};
+
 module.exports = {
   addItem,
   getItems,
   getItemById,
+  incrementItemView,
   markItemSold,
   deleteItem,
   getUserItems,
@@ -875,6 +979,7 @@ module.exports = {
   addComment,
   getItemComments,
   toggleCommentLike,
+  deleteComment,
   getTrendingTags,
   getMarketplaceStats
 };

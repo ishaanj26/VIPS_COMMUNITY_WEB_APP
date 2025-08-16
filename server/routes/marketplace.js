@@ -4,6 +4,7 @@ const {
   addItem,
   getItems,
   getItemById,
+  incrementItemView,
   markItemSold,
   deleteItem,
   getUserItems,
@@ -15,6 +16,7 @@ const {
   addComment,
   getItemComments,
   toggleCommentLike,
+  deleteComment,
   getTrendingTags,
   getMarketplaceStats
 } = require('../controllers/marketplaceController');
@@ -29,6 +31,7 @@ const authenticateUser = (req, res, next) => {
 // PUBLIC ROUTES
 router.get('/items', getItems);
 router.get('/item/:id', getItemById);
+router.patch('/item/:id/view', incrementItemView);
 router.get('/categories', getCategories);
 router.get('/trending-tags', getTrendingTags);
 router.get('/stats', getMarketplaceStats);
@@ -49,5 +52,6 @@ router.put('/offer/:offerId/respond', authenticateUser, respondToOffer);
 router.post('/comments', authenticateUser, addComment);
 router.get('/item/:itemId/comments', getItemComments);
 router.put('/comment/:commentId/like', authenticateUser, toggleCommentLike);
+router.delete('/comment/:commentId', authenticateUser, deleteComment);
 
 module.exports = router;
